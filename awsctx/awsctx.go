@@ -2,7 +2,6 @@ package awsctx
 
 import (
 	"bytes"
-	"errors"
 	"io/ioutil"
 	"regexp"
 )
@@ -10,8 +9,11 @@ import (
 var nameRegEx = regexp.MustCompile(`\[(.+)]`)
 var currentUserRegEx = regexp.MustCompile(`\[(.+)](.*)#name:\s(.+)`)
 
+var readFile = ioutil.ReadFile
+var writeFile = ioutil.WriteFile
+
 func GetUsers(folder string) ([]string, error) {
-	content, err := ioutil.ReadFile(folder + "/credentials")
+	content, err := readFile(folder + "/credentials")
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +39,7 @@ func GetUsers(folder string) ([]string, error) {
 
 func SwitchUser(folder, newUser string) error {
 	file := folder + "/credentials"
-	content, err := ioutil.ReadFile(file)
+	content, err := readFile(file)
 	if err != nil {
 		return err
 	}
@@ -45,19 +47,19 @@ func SwitchUser(folder, newUser string) error {
 	if err != nil {
 		return err
 	}
-	if newUserReg.Match(content) {
-		content = currentUserRegEx.ReplaceAll(content, []byte("[$3]"))
-		content = newUserReg.ReplaceAll(content, []byte("[default] #name: $1"))
-		print("Switched to user \"" + newUser + "\".")
-	} else {
-		return errors.New("no user with the name: \"" + newUser + "\".")
+	if !newUserReg.Match(content) {
+		print("No user with the name: \"" + newUser + "\".")
+		return nil
 	}
-	return ioutil.WriteFile(file, content, 0644)
+	content = currentUserRegEx.ReplaceAll(content, []byte("[$3]"))
+	content = newUserReg.ReplaceAll(content, []byte("[default] #name: $1"))
+	print("Switched to user \"" + newUser + "\".")
+	return writeFile(file, content, 0644)
 }
 
 func RenameUser(folder, oldUser, newUser string) error {
 	file := folder + "/credentials"
-	content, err := ioutil.ReadFile(file)
+	content, err := readFile(file)
 	if err != nil {
 		return err
 	}
@@ -65,8 +67,12 @@ func RenameUser(folder, oldUser, newUser string) error {
 	if err != nil {
 		return err
 	}
+	if !exp.Match(content) {
+		print("No user with the name: \"" + oldUser + "\".")
+		return nil
+	}
 	content = exp.ReplaceAll(content, []byte(`$1 REMOVE_ME` + newUser))
 	content = bytes.Replace(content, []byte(" REMOVE_ME"), []byte(""), -1)
 	print("Renamed user \"" + oldUser + "\" to \"" + newUser + "\".")
-	return ioutil.WriteFile(file, content, 0644)
+	return writeFile(file, content, 0644)
 }

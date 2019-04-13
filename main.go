@@ -23,22 +23,21 @@ func main() {
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name: "folder, f",
-			Usage: "aws folder",
+			Name:        "folder, f",
+			Usage:       "aws folder",
 			Destination: &awsFolder,
-			Value: os.Getenv("HOME") + "/.aws",
+			Value:       os.Getenv("HOME") + "/.aws",
 		},
 	}
 
 	app.Action = mainAction
 	app.Commands = cli.Commands{
 		{
-			Name: "rename",
-			ArgsUsage: "<old name> <new name>",
+			Name:        "rename",
+			ArgsUsage:   "<old name> <new name>",
 			Description: "renames a user to a new namer",
-			ShortName: "r",
-			Action: rename,
-
+			ShortName:   "r",
+			Action:      rename,
 		},
 	}
 	err := app.Run(os.Args)
