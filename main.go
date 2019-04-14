@@ -8,8 +8,12 @@ import (
 	"os"
 )
 
+const currentContextColor = "\033[1;33m"
+const normalColor = "\033[0m"
+
 var awsFolder string
 var nameFlag string
+var noColorFlag = false
 
 func main() {
 	app := cli.NewApp()
@@ -28,6 +32,11 @@ func main() {
 			Usage:       "aws folder",
 			Destination: &awsFolder,
 			Value:       os.Getenv("HOME") + "/.aws",
+		},
+		cli.BoolFlag{
+			Name: 	"no-color, nc",
+			Usage: "remove color from output",
+			Destination: &noColorFlag,
 		},
 	}
 
@@ -99,8 +108,19 @@ func mainAction(c *cli.Context) error {
 			}
 			return cli.NewExitError("awsctx is not initialised. Please run `awsctx setup`.", 1)
 		}
-		for i := range users {
-			print(users[i] + "\n")
+		for _, user := range users {
+			var prefix string
+			switch {
+			case noColorFlag && user.IsCurrent:
+				prefix = "*"
+			case !noColorFlag && user.IsCurrent:
+				prefix = currentContextColor
+			case noColorFlag && !user.IsCurrent:
+				prefix = " "
+			case !noColorFlag && !user.IsCurrent:
+				prefix = normalColor
+			}
+			print(prefix + user.Name + "\n")
 		}
 		return nil
 	case 1:

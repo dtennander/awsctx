@@ -6,7 +6,12 @@ import (
 	"regexp"
 )
 
-func GetUsers(folder string) ([]string, error) {
+type Context struct {
+	Name      string
+	IsCurrent bool
+}
+
+func GetUsers(folder string) ([]Context, error) {
 	creds, err := newCredentials(folder)
 	if err != nil {
 		return nil, err
@@ -16,12 +21,13 @@ func GetUsers(folder string) ([]string, error) {
 		return nil, err
 	}
 	users := creds.getAllUsers()
-	var result []string
+	var result []Context
 	for _, user := range users {
 		if user == "default" && ctx.isSet() {
-			user = ctx.getContext()
+			result = append(result, Context{Name: ctx.getContext(), IsCurrent: true})
+		} else {
+			result = append(result, Context{Name: user, IsCurrent: false})
 		}
-		result = append(result, string(user))
 	}
 	return result, nil
 }
@@ -36,7 +42,7 @@ func SwitchUser(folder, user string) error {
 		return err
 	}
 	if !credentials.userExists(user) && user != ctx.getContext() {
-		println("No user with the name: \"" + user + "\".")
+		println("No user with the Name: \"" + user + "\".")
 		return nil
 	}
 	if err := credentials.renameUser("default", ctx.getContext()); err != nil {
@@ -73,7 +79,7 @@ func RenameUser(folder, oldUser, newUser string) error {
 			return err
 		}
 	default:
-		println("No user with the name: \"" + oldUser + "\".")
+		println("No user with the Name: \"" + oldUser + "\".")
 		return nil
 	}
 	println("Renamed user \"" + oldUser + "\" to \"" + newUser + "\".")
@@ -90,7 +96,7 @@ var okName = regexp.MustCompile(`\S+`)
 
 func SetUpDefaultContext(folder, defaultName string) error {
 	if !okName.Match([]byte(defaultName)) {
-		return errors.New(fmt.Sprintf("%s is not a valid context name", defaultName))
+		return errors.New(fmt.Sprintf("%s is not a valid context Name", defaultName))
 	}
 	return createNewContext(folder, defaultName)
 }
