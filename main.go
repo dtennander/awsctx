@@ -1,7 +1,7 @@
 package main
 
 import (
-	"awsctx/awsctx"
+	"github.com/DiTo04/awsctx/awsctx"
 	"bufio"
 	"github.com/urfave/cli"
 	"log"
