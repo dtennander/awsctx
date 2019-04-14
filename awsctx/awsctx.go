@@ -1,30 +1,41 @@
 package awsctx
 
-import (
-	"fmt"
-	"github.com/pkg/errors"
-	"regexp"
-)
+type awsctx struct {
+	credentialsFile *credentialsFile
+	configFile      *configFile
+	contextFile     *contextFile
+}
+
+func New(folder string) (*awsctx, error) {
+	credFile, err := newCredentialsFile(folder)
+	if err != nil {
+		return nil, err
+	}
+	configFile, err := newConfigFile(folder)
+	if err != nil {
+		return nil, err
+	}
+	contextFile, err := newContextFile(folder)
+	if err != nil {
+		return nil, err
+	}
+	return &awsctx{
+		credentialsFile: credFile,
+		configFile:      configFile,
+		contextFile:     contextFile,
+	}, nil
+}
 
 type Context struct {
 	Name      string
 	IsCurrent bool
 }
 
-func GetUsers(folder string) ([]Context, error) {
-	creds, err := newCredentials(folder)
-	if err != nil {
-		return nil, err
-	}
-	ctx, err := newContext(folder)
-	if err != nil {
-		return nil, err
-	}
-	users := creds.getAllUsers()
+func (a *awsctx) GetUsers(folder string) ([]Context, error) {
 	var result []Context
-	for _, user := range users {
-		if user == "default" && ctx.isSet() {
-			result = append(result, Context{Name: ctx.getContext(), IsCurrent: true})
+	for _, user := range a.credentialsFile.getAllUsers() {
+		if user == "default" && a.contextFile.isSet() {
+			result = append(result, Context{Name: a.contextFile.getContext(), IsCurrent: true})
 		} else {
 			result = append(result, Context{Name: user, IsCurrent: false})
 		}
@@ -32,50 +43,45 @@ func GetUsers(folder string) ([]Context, error) {
 	return result, nil
 }
 
-func SwitchUser(folder, user string) error {
-	credentials, err := newCredentials(folder)
-	if err != nil {
-		return err
-	}
-	ctx, err := newContext(folder)
-	if err != nil {
-		return err
-	}
-	if !credentials.userExists(user) && user != ctx.getContext() {
+func (a *awsctx) SwitchUser(folder, user string) error {
+	if !a.credentialsFile.userExists(user) && user != a.contextFile.getContext() {
 		println("No user with the Name: \"" + user + "\".")
 		return nil
 	}
-	if err := credentials.renameUser("default", ctx.getContext()); err != nil {
+	if err := a.renameAll("default", a.contextFile.getContext()); err != nil {
 		return err
 	}
-	if err := credentials.renameUser(user, "default"); err != nil {
+	if err := a.renameAll(user, "default"); err != nil {
 		return err
 	}
-	ctx.setContext(user)
+	a.contextFile.setContext(user)
 	println("Switched to user \"" + user + "\".")
-	if err =  credentials.store(); err != nil {
-		return err
-	}
-	if err = ctx.store(); err != nil {
-		return err
-	}
-	return nil
+	return a.storeAll()
 }
 
-func RenameUser(folder, oldUser, newUser string) error {
-	creds, err := newCredentials(folder)
-	if err != nil {
+func (a *awsctx) renameAll(oldName, newName string) error {
+	if err := a.credentialsFile.renameUser(oldName, newName); err != nil {
 		return err
 	}
-	ctx, err := newContext(folder)
-	if err != nil {
+	return a.configFile.renameUser(oldName, newName)
+}
+
+func (a *awsctx) storeAll() error {
+	if err := a.credentialsFile.store(); err != nil {
 		return err
 	}
+	if err := a.contextFile.store(); err != nil {
+		return err
+	}
+	return a.configFile.store()
+}
+
+func (a *awsctx) RenameUser(folder, oldUser, newUser string) error {
 	switch {
-	case oldUser == ctx.getContext():
-		ctx.setContext(newUser)
-	case creds.userExists(oldUser):
-		if err := creds.renameUser(oldUser, newUser); err != nil {
+	case oldUser == a.contextFile.getContext():
+		a.contextFile.setContext(newUser)
+	case a.credentialsFile.userExists(oldUser):
+		if err := a.renameAll(oldUser, newUser); err != nil {
 			return err
 		}
 	default:
@@ -83,20 +89,9 @@ func RenameUser(folder, oldUser, newUser string) error {
 		return nil
 	}
 	println("Renamed user \"" + oldUser + "\" to \"" + newUser + "\".")
-	if err =  creds.store(); err != nil {
-		return err
-	}
-	if err = ctx.store(); err != nil {
-		return err
-	}
-	return nil
+	return a.storeAll()
 }
 
-var okName = regexp.MustCompile(`\S+`)
-
 func SetUpDefaultContext(folder, defaultName string) error {
-	if !okName.Match([]byte(defaultName)) {
-		return errors.New(fmt.Sprintf("%s is not a valid context Name", defaultName))
-	}
-	return createNewContext(folder, defaultName)
+	return createNewContextFile(folder, defaultName)
 }

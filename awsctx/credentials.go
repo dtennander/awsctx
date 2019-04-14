@@ -2,17 +2,18 @@ package awsctx
 
 import "regexp"
 
-type credentials struct {
+type credentialsFile struct {
 	openFile
 }
 
-func newCredentials(folder string) (*credentials, error) {
+func newCredentialsFile(folder string) (*credentialsFile, error) {
 	file, e := newOpenFile(folder + "/credentials")
-	return &credentials{openFile: *file}, e
+	return &credentialsFile{openFile: *file}, e
 }
 
-func (c *credentials) getAllUsers() []string {
-	nameRegEx := regexp.MustCompile(`\[(.+)]`)
+var nameRegEx = regexp.MustCompile(`\[(.+)]`)
+
+func (c *credentialsFile) getAllUsers() []string {
 	users := nameRegEx.FindAllSubmatch(c.data, -1)
 	var result []string
 	for i := range users {
@@ -21,7 +22,7 @@ func (c *credentials) getAllUsers() []string {
 	return result
 }
 
-func (c *credentials) renameUser(oldName, newName string) error {
+func (c *credentialsFile) renameUser(oldName, newName string) error {
 	userReg, err := regexp.Compile(`\[` + oldName + `]`)
 	if err != nil {
 		return err
@@ -30,7 +31,7 @@ func (c *credentials) renameUser(oldName, newName string) error {
 	return nil
 }
 
-func (c *credentials) userExists(user string) bool {
+func (c *credentialsFile) userExists(user string) bool {
 	userReg, err := regexp.Compile(`\[(` + user + `)]`)
 	if err != nil {
 		return false

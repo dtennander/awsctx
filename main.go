@@ -34,8 +34,8 @@ func main() {
 			Value:       os.Getenv("HOME") + "/.aws",
 		},
 		cli.BoolFlag{
-			Name: 	"no-color, nc",
-			Usage: "remove color from output",
+			Name:        "no-color, nc",
+			Usage:       "remove color from output",
 			Destination: &noColorFlag,
 		},
 	}
@@ -48,13 +48,13 @@ func main() {
 			Description: "renames a user to a new namer",
 			ShortName:   "r",
 			Action:      rename,
-		},{
-			Name: "setup",
+		}, {
+			Name:        "setup",
 			Description: "set up awsctx.",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:"name, n",
-					Usage: "set context name for default user",
+					Name:        "name, n",
+					Usage:       "set context name for default user",
 					Destination: &nameFlag,
 				},
 			},
@@ -73,9 +73,12 @@ func rename(c *cli.Context) error {
 	}
 	oldName := c.Args()[0]
 	newName := c.Args()[1]
-	return awsctx.RenameUser(awsFolder, oldName, newName)
+	aws, err := awsctx.New(awsFolder)
+	if err != nil {
+		return err
+	}
+	return aws.RenameUser(awsFolder, oldName, newName)
 }
-
 
 func setup(c *cli.Context) error {
 	var name string
@@ -98,9 +101,13 @@ func setup(c *cli.Context) error {
 }
 
 func mainAction(c *cli.Context) error {
+	aws, err := awsctx.New(awsFolder)
+	if err != nil {
+		return err
+	}
 	switch c.NArg() {
 	case 0:
-		users, err := awsctx.GetUsers(awsFolder)
+		users, err := aws.GetUsers(awsFolder)
 		if err != nil {
 			_, ok := err.(awsctx.NoContextError)
 			if !ok {
@@ -124,7 +131,7 @@ func mainAction(c *cli.Context) error {
 		}
 		return nil
 	case 1:
-		return awsctx.SwitchUser(awsFolder, c.Args()[0])
+		return aws.SwitchUser(awsFolder, c.Args()[0])
 	default:
 		return cli.NewExitError("expected one or zero arguments", 1)
 	}
