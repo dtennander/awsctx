@@ -2,13 +2,14 @@ package main
 
 import (
 	"awsctx/awsctx"
+	"bufio"
+	"github.com/urfave/cli"
 	"log"
 	"os"
-
-	"github.com/urfave/cli"
 )
 
 var awsFolder string
+var nameFlag string
 
 func main() {
 	app := cli.NewApp()
@@ -38,6 +39,17 @@ func main() {
 			Description: "renames a user to a new namer",
 			ShortName:   "r",
 			Action:      rename,
+		},{
+			Name: "setup",
+			Description: "set up awsctx.",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:"name, n",
+					Usage: "set context name for default user",
+					Destination: &nameFlag,
+				},
+			},
+			Action: setup,
 		},
 	}
 	err := app.Run(os.Args)
@@ -48,11 +60,32 @@ func main() {
 
 func rename(c *cli.Context) error {
 	if c.NArg() != 2 {
-		return cli.NewExitError("expected old name and new name", 1)
+		return cli.NewExitError("Expected old name and new name.", 1)
 	}
 	oldName := c.Args()[0]
 	newName := c.Args()[1]
 	return awsctx.RenameUser(awsFolder, oldName, newName)
+}
+
+
+func setup(c *cli.Context) error {
+	var name string
+	if nameFlag != "" {
+		name = nameFlag
+	} else {
+		scanner := bufio.NewReader(os.Stdin)
+		print("Name of current context: ")
+		input, err := scanner.ReadString('\n')
+		if err != nil {
+			return err
+		}
+		name = input
+	}
+	err := awsctx.SetUpDefaultContext(awsFolder, name)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 1)
+	}
+	return err
 }
 
 func mainAction(c *cli.Context) error {
@@ -60,7 +93,11 @@ func mainAction(c *cli.Context) error {
 	case 0:
 		users, err := awsctx.GetUsers(awsFolder)
 		if err != nil {
-			return err
+			_, ok := err.(awsctx.NoContextError)
+			if !ok {
+				return err
+			}
+			return cli.NewExitError("awsctx is not initialised. Please run `awsctx setup`.", 1)
 		}
 		for i := range users {
 			print(users[i] + "\n")

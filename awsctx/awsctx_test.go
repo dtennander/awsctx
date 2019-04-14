@@ -1,26 +1,71 @@
 package awsctx
 
 import (
+	"gotest.tools/assert"
+	"os"
+	"strings"
 	"testing"
 )
 
-func TestGetUsers(t *testing.T) {
+var credFileContent []byte
+var ctxFileContent []byte
+
+func initMocks() {
 	readFile = func(f string) (bs []byte, e error) {
-		bs = []byte(`[default] #name: DPT`)
+		if strings.Contains(f, "credentials") {
+			bs = []byte(`
+				[default] 
+				[OTHER_USER]`)
+		} else if strings.Contains(f, "awsctx") {
+			bs = []byte("USER")
+		}
 		return
 	}
+	credFileContent = nil
+	ctxFileContent = nil
+	writeFile = func(f string, c []byte, p os.FileMode) error {
+		if strings.Contains(f, "credentials") {
+			credFileContent = c
+		} else if strings.Contains(f, "awsctx") {
+			ctxFileContent = c
+		}
+		return nil
+	}
+}
 
+func TestGetUsers(t *testing.T) {
+	initMocks()
 	users, err := GetUsers("aFolder")
-	if err != nil {
-		t.Errorf("GetUser() error = %v", err)
-	}
+	assert.NilError(t, err)
+	assert.Equal(t, len(users), 2)
+	assert.Equal(t, users[0], "USER")
+}
 
-	if len(users) != 1 {
-		t.Errorf("GetUser() should return one user got %d", len(users))
-	}
+func TestSwitchUser(t *testing.T) {
+	initMocks()
+	err := SwitchUser("aFolder", "OTHER_USER")
+	assert.NilError(t, err)
+	assert.Equal(t, string(credFileContent), `
+				[USER] 
+				[default]`)
+	assert.Equal(t, string(ctxFileContent), "OTHER_USER")
+}
 
-	if users[0] != "USERNAME" {
-		t.Errorf("GetUSer() did not return expected user USERNAME, got: %v", users[0])
-	}
+func TestRenameCtx(t *testing.T) {
+	initMocks()
+	err := RenameUser("aFolder", "USER", "NEW_NAME")
+	assert.NilError(t, err)
+	assert.Equal(t, string(credFileContent), `
+				[default] 
+				[OTHER_USER]`)
+	assert.Equal(t, string(ctxFileContent), "NEW_NAME")
+}
 
+func TestRenameNotCtx(t *testing.T) {
+	initMocks()
+	err := RenameUser("aFolder", "OTHER_USER", "NEW_NAME")
+	assert.NilError(t, err)
+	assert.Equal(t, string(credFileContent), `
+				[default] 
+				[NEW_NAME]`)
 }

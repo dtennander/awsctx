@@ -1,78 +1,96 @@
 package awsctx
 
 import (
-	"bytes"
-	"io/ioutil"
+	"fmt"
+	"github.com/pkg/errors"
 	"regexp"
 )
 
-var nameRegEx = regexp.MustCompile(`\[(.+)]`)
-var currentUserRegEx = regexp.MustCompile(`\[(.+)](.*)#name:\s(.+)`)
-
-var readFile = ioutil.ReadFile
-var writeFile = ioutil.WriteFile
-
 func GetUsers(folder string) ([]string, error) {
-	content, err := readFile(folder + "/credentials")
+	creds, err := newCredentials(folder)
 	if err != nil {
 		return nil, err
 	}
-	users := nameRegEx.FindAllSubmatch(content, -1)
+	ctx, err := newContext(folder)
+	if err != nil {
+		return nil, err
+	}
+	users := creds.getAllUsers()
 	var result []string
-	var defaultUserFound = false
-	for i := range users {
-		user := string(users[i][1])
-		if user == "default" {
-			defaultUserFound = true
-			continue
+	for _, user := range users {
+		if user == "default" && ctx.isSet() {
+			user = ctx.getContext()
 		}
 		result = append(result, string(user))
-	}
-	if currentUserRegEx.Match(content) {
-		currentUser := string(currentUserRegEx.FindSubmatch(content)[3])
-		result = append(result, currentUser)
-	} else if defaultUserFound {
-		result = append(result, "default")
 	}
 	return result, nil
 }
 
-func SwitchUser(folder, newUser string) error {
-	file := folder + "/credentials"
-	content, err := readFile(file)
+func SwitchUser(folder, user string) error {
+	credentials, err := newCredentials(folder)
 	if err != nil {
 		return err
 	}
-	newUserReg, err := regexp.Compile(`\[(` + newUser + `)]`)
+	ctx, err := newContext(folder)
 	if err != nil {
 		return err
 	}
-	if !newUserReg.Match(content) {
-		print("No user with the name: \"" + newUser + "\".")
+	if !credentials.userExists(user) && user != ctx.getContext() {
+		println("No user with the name: \"" + user + "\".")
 		return nil
 	}
-	content = currentUserRegEx.ReplaceAll(content, []byte("[$3]"))
-	content = newUserReg.ReplaceAll(content, []byte("[default] #name: $1"))
-	print("Switched to user \"" + newUser + "\".")
-	return writeFile(file, content, 0644)
+	if err := credentials.renameUser("default", ctx.getContext()); err != nil {
+		return err
+	}
+	if err := credentials.renameUser(user, "default"); err != nil {
+		return err
+	}
+	ctx.setContext(user)
+	println("Switched to user \"" + user + "\".")
+	if err =  credentials.store(); err != nil {
+		return err
+	}
+	if err = ctx.store(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func RenameUser(folder, oldUser, newUser string) error {
-	file := folder + "/credentials"
-	content, err := readFile(file)
+	creds, err := newCredentials(folder)
 	if err != nil {
 		return err
 	}
-	exp, err := regexp.Compile(`(\[|#name: )` + oldUser)
+	ctx, err := newContext(folder)
 	if err != nil {
 		return err
 	}
-	if !exp.Match(content) {
-		print("No user with the name: \"" + oldUser + "\".")
+	switch {
+	case oldUser == ctx.getContext():
+		ctx.setContext(newUser)
+	case creds.userExists(oldUser):
+		if err := creds.renameUser(oldUser, newUser); err != nil {
+			return err
+		}
+	default:
+		println("No user with the name: \"" + oldUser + "\".")
 		return nil
 	}
-	content = exp.ReplaceAll(content, []byte(`$1 REMOVE_ME` + newUser))
-	content = bytes.Replace(content, []byte(" REMOVE_ME"), []byte(""), -1)
-	print("Renamed user \"" + oldUser + "\" to \"" + newUser + "\".")
-	return writeFile(file, content, 0644)
+	println("Renamed user \"" + oldUser + "\" to \"" + newUser + "\".")
+	if err =  creds.store(); err != nil {
+		return err
+	}
+	if err = ctx.store(); err != nil {
+		return err
+	}
+	return nil
+}
+
+var okName = regexp.MustCompile(`\S+`)
+
+func SetUpDefaultContext(folder, defaultName string) error {
+	if !okName.Match([]byte(defaultName)) {
+		return errors.New(fmt.Sprintf("%s is not a valid context name", defaultName))
+	}
+	return createNewContext(folder, defaultName)
 }
