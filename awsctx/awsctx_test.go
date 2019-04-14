@@ -11,7 +11,7 @@ var credFileContent []byte
 var ctxFileContent []byte
 var configFileContent []byte
 
-var target *awsctx
+var target *Awsctx
 
 func before() {
 	readFile = func(f string) (bs []byte, e error) {

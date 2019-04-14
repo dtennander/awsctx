@@ -1,12 +1,12 @@
 package awsctx
 
-type awsctx struct {
+type Awsctx struct {
 	credentialsFile *credentialsFile
 	configFile      *configFile
 	contextFile     *contextFile
 }
 
-func New(folder string) (*awsctx, error) {
+func New(folder string) (*Awsctx, error) {
 	credFile, err := newCredentialsFile(folder)
 	if err != nil {
 		return nil, err
@@ -19,7 +19,7 @@ func New(folder string) (*awsctx, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &awsctx{
+	return &Awsctx{
 		credentialsFile: credFile,
 		configFile:      configFile,
 		contextFile:     contextFile,
@@ -31,7 +31,7 @@ type Context struct {
 	IsCurrent bool
 }
 
-func (a *awsctx) GetUsers(folder string) ([]Context, error) {
+func (a *Awsctx) GetUsers(folder string) ([]Context, error) {
 	var result []Context
 	for _, user := range a.credentialsFile.getAllUsers() {
 		if user == "default" && a.contextFile.isSet() {
@@ -43,40 +43,7 @@ func (a *awsctx) GetUsers(folder string) ([]Context, error) {
 	return result, nil
 }
 
-func (a *awsctx) SwitchUser(folder, user string) error {
-	if !a.credentialsFile.userExists(user) && user != a.contextFile.getContext() {
-		println("No user with the Name: \"" + user + "\".")
-		return nil
-	}
-	if err := a.renameAll("default", a.contextFile.getContext()); err != nil {
-		return err
-	}
-	if err := a.renameAll(user, "default"); err != nil {
-		return err
-	}
-	a.contextFile.setContext(user)
-	println("Switched to user \"" + user + "\".")
-	return a.storeAll()
-}
-
-func (a *awsctx) renameAll(oldName, newName string) error {
-	if err := a.credentialsFile.renameUser(oldName, newName); err != nil {
-		return err
-	}
-	return a.configFile.renameUser(oldName, newName)
-}
-
-func (a *awsctx) storeAll() error {
-	if err := a.credentialsFile.store(); err != nil {
-		return err
-	}
-	if err := a.contextFile.store(); err != nil {
-		return err
-	}
-	return a.configFile.store()
-}
-
-func (a *awsctx) RenameUser(folder, oldUser, newUser string) error {
+func (a *Awsctx) RenameUser(folder, oldUser, newUser string) error {
 	switch {
 	case oldUser == a.contextFile.getContext():
 		a.contextFile.setContext(newUser)
@@ -89,6 +56,39 @@ func (a *awsctx) RenameUser(folder, oldUser, newUser string) error {
 		return nil
 	}
 	println("Renamed user \"" + oldUser + "\" to \"" + newUser + "\".")
+	return a.storeAll()
+}
+
+func (a *Awsctx) renameAll(oldName, newName string) error {
+	if err := a.credentialsFile.renameUser(oldName, newName); err != nil {
+		return err
+	}
+	return a.configFile.renameUser(oldName, newName)
+}
+
+func (a *Awsctx) storeAll() error {
+	if err := a.credentialsFile.store(); err != nil {
+		return err
+	}
+	if err := a.contextFile.store(); err != nil {
+		return err
+	}
+	return a.configFile.store()
+}
+
+func (a *Awsctx) SwitchUser(folder, user string) error {
+	if !a.credentialsFile.userExists(user) && user != a.contextFile.getContext() {
+		println("No user with the Name: \"" + user + "\".")
+		return nil
+	}
+	if err := a.renameAll("default", a.contextFile.getContext()); err != nil {
+		return err
+	}
+	if err := a.renameAll(user, "default"); err != nil {
+		return err
+	}
+	a.contextFile.setContext(user)
+	println("Switched to user \"" + user + "\".")
 	return a.storeAll()
 }
 

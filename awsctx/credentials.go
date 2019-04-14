@@ -34,7 +34,7 @@ func (c *credentialsFile) renameUser(oldName, newName string) error {
 func (c *credentialsFile) userExists(user string) bool {
 	userReg, err := regexp.Compile(`\[(` + user + `)]`)
 	if err != nil {
-		return false
+		return false //TODO: Might not be the best solution...
 	}
 	return userReg.Match(c.data)
 }

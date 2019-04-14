@@ -13,12 +13,12 @@ func (n NoContextError) Error() string {
 }
 
 func newContextFile(folder string) (*contextFile, error) {
-	file, e := newOpenFile(folder + "/awsctx")
-	if e != nil {
-		if !os.IsNotExist(e) {
-			return nil, e
+	file, err := newOpenFile(folder + "/awsctx")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, NoContextError("awsctx file does not exist")
 		}
-		return nil, NoContextError("awsctx file does not exist")
+		return nil, err
 	}
 	return &contextFile{openFile: *file}, nil
 }

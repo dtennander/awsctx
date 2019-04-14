@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 )
 
+// This is here for testability.
 var readFile = ioutil.ReadFile
 var writeFile = ioutil.WriteFile
 

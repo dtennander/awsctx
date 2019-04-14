@@ -18,7 +18,7 @@ func (c *configFile) renameUser(oldName, newName string) error {
 	if oldName == "default" {
 		userReg = defaultRegEx
 	} else {
-		var err error
+		var err error // needed to not override userReg.
 		userReg, err = regexp.Compile(`\[profile ` + oldName + `]`)
 		if err != nil {
 			return err

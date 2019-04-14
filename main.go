@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/DiTo04/awsctx/awsctx"
 	"bufio"
+	"github.com/DiTo04/awsctx/awsctx"
 	"github.com/urfave/cli"
 	"log"
 	"os"
@@ -71,16 +71,14 @@ func rename(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cli.NewExitError("Expected old name and new name.", 1)
 	}
-	oldName := c.Args()[0]
-	newName := c.Args()[1]
 	aws, err := awsctx.New(awsFolder)
 	if err != nil {
 		return err
 	}
-	return aws.RenameUser(awsFolder, oldName, newName)
+	return aws.RenameUser(awsFolder, c.Args()[0], c.Args()[1])
 }
 
-func setup(c *cli.Context) error {
+func setup(_ *cli.Context) error {
 	var name string
 	if nameFlag != "" {
 		name = nameFlag
@@ -107,32 +105,36 @@ func mainAction(c *cli.Context) error {
 	}
 	switch c.NArg() {
 	case 0:
-		users, err := aws.GetUsers(awsFolder)
-		if err != nil {
-			_, ok := err.(awsctx.NoContextError)
-			if !ok {
-				return err
-			}
-			return cli.NewExitError("awsctx is not initialised. Please run `awsctx setup`.", 1)
-		}
-		for _, user := range users {
-			var prefix string
-			switch {
-			case noColorFlag && user.IsCurrent:
-				prefix = "*"
-			case !noColorFlag && user.IsCurrent:
-				prefix = currentContextColor
-			case noColorFlag && !user.IsCurrent:
-				prefix = " "
-			case !noColorFlag && !user.IsCurrent:
-				prefix = normalColor
-			}
-			print(prefix + user.Name + "\n")
-		}
-		return nil
+		return printAllUsers(aws)
 	case 1:
 		return aws.SwitchUser(awsFolder, c.Args()[0])
 	default:
 		return cli.NewExitError("expected one or zero arguments", 1)
 	}
+}
+
+func printAllUsers(aws *awsctx.Awsctx) error {
+	users, err := aws.GetUsers(awsFolder)
+	if err != nil {
+		_, ok := err.(awsctx.NoContextError)
+		if !ok {
+			return err
+		}
+		return cli.NewExitError("awsctx is not initialised. Please run `awsctx setup`.", 1)
+	}
+	for _, user := range users {
+		var prefix string
+		switch {
+		case noColorFlag && user.IsCurrent:
+			prefix = "*"
+		case !noColorFlag && user.IsCurrent:
+			prefix = currentContextColor
+		case noColorFlag && !user.IsCurrent:
+			prefix = " "
+		case !noColorFlag && !user.IsCurrent:
+			prefix = normalColor
+		}
+		println(prefix + user.Name)
+	}
+	return nil
 }
