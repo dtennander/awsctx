@@ -31,7 +31,7 @@ type Context struct {
 	IsCurrent bool
 }
 
-func (a *Awsctx) GetUsers(folder string) ([]Context, error) {
+func (a *Awsctx) GetUsers() ([]Context, error) {
 	var result []Context
 	for _, user := range a.credentialsFile.getAllUsers() {
 		if user == "default" && a.contextFile.isSet() {
@@ -43,7 +43,7 @@ func (a *Awsctx) GetUsers(folder string) ([]Context, error) {
 	return result, nil
 }
 
-func (a *Awsctx) RenameUser(folder, oldUser, newUser string) error {
+func (a *Awsctx) RenameUser(oldUser, newUser string) error {
 	switch {
 	case oldUser == a.contextFile.getContext():
 		a.contextFile.setContext(newUser)
@@ -76,7 +76,7 @@ func (a *Awsctx) storeAll() error {
 	return a.configFile.store()
 }
 
-func (a *Awsctx) SwitchUser(folder, user string) error {
+func (a *Awsctx) SwitchUser(user string) error {
 	if !a.credentialsFile.userExists(user) && user != a.contextFile.getContext() {
 		println("No user with the Name: \"" + user + "\".")
 		return nil

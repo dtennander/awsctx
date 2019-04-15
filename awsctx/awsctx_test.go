@@ -45,7 +45,7 @@ func before() {
 
 func TestGetUsers(t *testing.T) {
 	before()
-	users, err := target.GetUsers("aFolder")
+	users, err := target.GetUsers()
 	assert.NilError(t, err)
 	assert.Equal(t, len(users), 2)
 	assert.Equal(t, users[0].Name, "USER")
@@ -54,7 +54,7 @@ func TestGetUsers(t *testing.T) {
 
 func TestSwitchUser(t *testing.T) {
 	before()
-	err := target.SwitchUser("aFolder", "OTHER_USER")
+	err := target.SwitchUser("OTHER_USER")
 	assert.NilError(t, err)
 	assert.Equal(t, string(credFileContent), `
 				[USER] 
@@ -67,7 +67,7 @@ func TestSwitchUser(t *testing.T) {
 
 func TestRenameCtx(t *testing.T) {
 	before()
-	err := target.RenameUser("aFolder", "USER", "NEW_NAME")
+	err := target.RenameUser("USER", "NEW_NAME")
 	assert.NilError(t, err)
 	assert.Equal(t, string(credFileContent), `
 				[default] 
@@ -80,7 +80,7 @@ func TestRenameCtx(t *testing.T) {
 
 func TestRenameNotCtx(t *testing.T) {
 	before()
-	err := target.RenameUser("aFolder", "OTHER_USER", "NEW_NAME")
+	err := target.RenameUser("OTHER_USER", "NEW_NAME")
 	assert.NilError(t, err)
 	assert.Equal(t, string(credFileContent), `
 				[default] 

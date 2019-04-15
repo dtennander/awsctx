@@ -75,7 +75,7 @@ func rename(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	return aws.RenameUser(awsFolder, c.Args()[0], c.Args()[1])
+	return aws.RenameUser(c.Args()[0], c.Args()[1])
 }
 
 func setup(_ *cli.Context) error {
@@ -107,14 +107,14 @@ func mainAction(c *cli.Context) error {
 	case 0:
 		return printAllUsers(aws)
 	case 1:
-		return aws.SwitchUser(awsFolder, c.Args()[0])
+		return aws.SwitchUser(c.Args()[0])
 	default:
 		return cli.NewExitError("expected one or zero arguments", 1)
 	}
 }
 
 func printAllUsers(aws *awsctx.Awsctx) error {
-	users, err := aws.GetUsers(awsFolder)
+	users, err := aws.GetUsers()
 	if err != nil {
 		_, ok := err.(awsctx.NoContextError)
 		if !ok {
