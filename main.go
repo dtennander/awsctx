@@ -6,6 +6,7 @@ import (
 	"github.com/urfave/cli"
 	"log"
 	"os"
+	"strings"
 )
 
 const currentContextColor = "\033[1;33m"
@@ -89,7 +90,7 @@ func setup(_ *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		name = input
+		name = strings.TrimRight(input, "\n")
 	}
 	err := awsctx.SetUpDefaultContext(awsFolder, name)
 	if err != nil {
