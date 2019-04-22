@@ -33,3 +33,14 @@ func (c *configFile) renameUser(oldName, newName string) error {
 	c.data = userReg.ReplaceAll(c.data, []byte(newTag))
 	return nil
 }
+
+var usersRegex = regexp.MustCompile(`\[profile (\S+)]`)
+
+func (c *configFile) getAllUsers() []string {
+	users := usersRegex.FindAllSubmatch(c.data, -1)
+	var result []string
+	for i := range users {
+		result = append(result, string(users[i][1]))
+	}
+	return result
+}

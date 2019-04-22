@@ -33,7 +33,7 @@ type Context struct {
 
 func (a *Awsctx) GetUsers() ([]Context, error) {
 	var result []Context
-	for _, user := range a.credentialsFile.getAllUsers() {
+	for _, user := range unionOf(a.credentialsFile.getAllUsers(), a.configFile.getAllUsers()) {
 		if user == "default" && a.contextFile.isSet() {
 			result = append(result, Context{Name: a.contextFile.getContext(), IsCurrent: true})
 		} else {
@@ -41,6 +41,21 @@ func (a *Awsctx) GetUsers() ([]Context, error) {
 		}
 	}
 	return result, nil
+}
+
+func unionOf(as []string, bs []string) []string {
+	unionMap := map[string]bool{}
+	for _, a := range as {
+		unionMap[a] = true
+	}
+	for _,b := range bs {
+		unionMap[b] = true
+	}
+	var union []string
+	for k, _ := range unionMap {
+		union = append(union, k)
+	}
+	return union
 }
 
 func (a *Awsctx) RenameUser(oldUser, newUser string) error {
