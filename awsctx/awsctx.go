@@ -34,8 +34,8 @@ type Context struct {
 func (a *Awsctx) GetUsers() ([]Context, error) {
 	var result []Context
 	for _, user := range unionOf(a.credentialsFile.getAllUsers(), a.configFile.getAllUsers()) {
-		if user == "default" && a.contextFile.isSet() {
-			result = append(result, Context{Name: a.contextFile.getContext(), IsCurrent: true})
+		if user == "default" && a.contextFile.CurrentContext != "" {
+			result = append(result, Context{Name: a.contextFile.CurrentContext, IsCurrent: true})
 		} else {
 			result = append(result, Context{Name: user, IsCurrent: false})
 		}
@@ -60,8 +60,8 @@ func unionOf(as []string, bs []string) []string {
 
 func (a *Awsctx) RenameUser(oldUser, newUser string) error {
 	switch {
-	case oldUser == a.contextFile.getContext():
-		a.contextFile.setContext(newUser)
+	case oldUser == a.contextFile.CurrentContext:
+		a.contextFile.CurrentContext = newUser
 	case a.credentialsFile.userExists(oldUser):
 		if err := a.renameAll(oldUser, newUser); err != nil {
 			return err
@@ -92,17 +92,17 @@ func (a *Awsctx) storeAll() error {
 }
 
 func (a *Awsctx) SwitchUser(user string) error {
-	if !a.credentialsFile.userExists(user) && user != a.contextFile.getContext() {
+	if !a.credentialsFile.userExists(user) && user != a.contextFile.CurrentContext {
 		println("No user with the Name: \"" + user + "\".")
 		return nil
 	}
-	if err := a.renameAll("default", a.contextFile.getContext()); err != nil {
+	if err := a.renameAll("default", a.contextFile.CurrentContext); err != nil {
 		return err
 	}
 	if err := a.renameAll(user, "default"); err != nil {
 		return err
 	}
-	a.contextFile.setContext(user)
+	a.contextFile.CurrentContext = user
 	println("Switched to user \"" + user + "\".")
 	return a.storeAll()
 }

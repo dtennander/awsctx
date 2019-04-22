@@ -1,9 +1,22 @@
 package awsctx
 
-import "os"
+import (
+	"gopkg.in/yaml.v2"
+	"os"
+)
 
 type contextFile struct {
-	openFile
+	CurrentContext string `yaml:"currentContext"`
+	LastContext string `yaml:"lastContext,omitempty"`
+	filePath string
+}
+
+func (ctx *contextFile) store() error {
+	out, err := yaml.Marshal(ctx)
+	if err != nil {
+		return err
+	}
+	return writeFile(ctx.filePath, out, 0644)
 }
 
 type NoContextError string
@@ -13,28 +26,27 @@ func (n NoContextError) Error() string {
 }
 
 func newContextFile(folder string) (*contextFile, error) {
-	file, err := newOpenFile(folder + "/awsctx")
+	filePath := folder + "/awsctx"
+	file, err := readFile(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, NoContextError("awsctx file does not exist")
 		}
 		return nil, err
 	}
-	return &contextFile{openFile: *file}, nil
+	ctx := &contextFile{}
+	if err := yaml.Unmarshal(file, ctx); err != nil {
+		return nil, err
+	}
+	ctx.filePath = filePath
+	return ctx, nil
 }
 
 func createNewContextFile(folder, name string) error {
-	return writeFile(folder+"/awsctx", []byte(name), 0644)
-}
-
-func (c *contextFile) getContext() string {
-	return string(c.data)
-}
-
-func (c *contextFile) setContext(user string) {
-	c.data = []byte(user)
-}
-
-func (c *contextFile) isSet() bool {
-	return len(c.data) != 0
+	newCtx := contextFile{CurrentContext:name}
+	out, err := yaml.Marshal(newCtx)
+	if err != nil {
+		return err
+	}
+	return writeFile(folder+"/awsctx", out, 0644)
 }

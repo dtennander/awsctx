@@ -19,7 +19,7 @@ func setUpFiles(credentialUsers []string, contextUser string, configUsers []stri
 		if strings.Contains(f, "credentials") {
 			bs = []byte(createFile("", credentialUsers))
 		} else if strings.Contains(f, "awsctx") {
-			bs = []byte(contextUser)
+			bs = []byte(fmt.Sprintf("currentContext: %s\n", contextUser))
 		} else if strings.Contains(f, "config") {
 			bs = []byte(createFile("profile ", configUsers))
 		}
@@ -84,7 +84,7 @@ func TestSwitchUser(t *testing.T) {
 	newUsers := []string{"USER", "default"}
 	assert.Equal(t, string(credFileContent), createFile("", newUsers))
 	assert.Equal(t, string(configFileContent), createFile("profile ", newUsers))
-	assert.Equal(t, string(ctxFileContent), "OTHER_USER")
+	assert.Equal(t, string(ctxFileContent), fmt.Sprintf("currentContext: %s\n", "OTHER_USER"))
 }
 
 func TestRenameCtx(t *testing.T) {
@@ -94,7 +94,7 @@ func TestRenameCtx(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, string(credFileContent), createFile("", users))
 	assert.Equal(t, string(configFileContent), createFile("profile ", users))
-	assert.Equal(t, string(ctxFileContent), "NEW_NAME")
+	assert.Equal(t, string(ctxFileContent), fmt.Sprintf("currentContext: %s\n", "NEW_NAME"))
 }
 
 func TestRenameNotCtx(t *testing.T) {
