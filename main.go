@@ -61,9 +61,9 @@ func main() {
 			},
 			Action: setup,
 		}, {
-			Name: "-",
+			Name:        "-",
 			Description: "Switch to the previous user",
-			Action: switchBack,
+			Action:      switchBack,
 		},
 	}
 	err := app.Run(os.Args)

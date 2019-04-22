@@ -7,8 +7,8 @@ import (
 
 type contextFile struct {
 	CurrentContext string `yaml:"currentContext"`
-	LastContext string `yaml:"lastContext,omitempty"`
-	filePath string `yaml:"omit"`
+	LastContext    string `yaml:"lastContext,omitempty"`
+	filePath       string `yaml:"omit"`
 }
 
 func (ctx *contextFile) store() error {
@@ -43,7 +43,7 @@ func newContextFile(folder string) (*contextFile, error) {
 }
 
 func createNewContextFile(folder, name string) error {
-	newCtx := contextFile{CurrentContext:name}
+	newCtx := contextFile{CurrentContext: name}
 	out, err := yaml.Marshal(newCtx)
 	if err != nil {
 		return err

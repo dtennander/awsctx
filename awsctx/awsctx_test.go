@@ -65,14 +65,14 @@ func TestGetUsers(t *testing.T) {
 }
 
 func TestGetUsersExtraInConfig(t *testing.T) {
-	setUpFiles([]string{"default", "A"},&contextFile{CurrentContext: "USER"}, []string{"default", "A", "B"})
+	setUpFiles([]string{"default", "A"}, &contextFile{CurrentContext: "USER"}, []string{"default", "A", "B"})
 	users, err := target.GetUsers()
 	assert.NilError(t, err)
 	assert.Equal(t, len(users), 3)
 }
 
 func TestGetUsersExtraInCredentials(t *testing.T) {
-	setUpFiles([]string{"default", "A", "B"},&contextFile{CurrentContext: "USER"}, []string{"default", "A"})
+	setUpFiles([]string{"default", "A", "B"}, &contextFile{CurrentContext: "USER"}, []string{"default", "A"})
 	users, err := target.GetUsers()
 	assert.NilError(t, err)
 	assert.Equal(t, len(users), 3)
@@ -80,7 +80,7 @@ func TestGetUsersExtraInCredentials(t *testing.T) {
 
 func TestSwitchUser(t *testing.T) {
 	users := []string{"default", "OTHER_USER"}
-	setUpFiles(users, &contextFile{CurrentContext: "USER"}, users, )
+	setUpFiles(users, &contextFile{CurrentContext: "USER"}, users)
 	err := target.SwitchUser("OTHER_USER")
 	assert.NilError(t, err)
 	newUsers := []string{"USER", "default"}
@@ -94,7 +94,7 @@ func TestSwitchUser(t *testing.T) {
 
 func TestSwitchBack(t *testing.T) {
 	users := []string{"default", "OTHER_USER"}
-	setUpFiles(users, &contextFile{CurrentContext: "USER", LastContext:"OTHER_USER"}, users, )
+	setUpFiles(users, &contextFile{CurrentContext: "USER", LastContext: "OTHER_USER"}, users)
 	err := target.SwitchBack()
 	assert.NilError(t, err)
 	newCtx := &contextFile{}
@@ -105,7 +105,7 @@ func TestSwitchBack(t *testing.T) {
 
 func TestRenameCtx(t *testing.T) {
 	users := []string{"default", "OTHER_USER"}
-	setUpFiles(users, &contextFile{CurrentContext: "USER"}, users, )
+	setUpFiles(users, &contextFile{CurrentContext: "USER"}, users)
 	err := target.RenameUser("USER", "NEW_NAME")
 	assert.NilError(t, err)
 	assert.Equal(t, string(credFileContent), createFile("", users))
@@ -115,7 +115,7 @@ func TestRenameCtx(t *testing.T) {
 
 func TestRenameNotCtx(t *testing.T) {
 	users := []string{"default", "OTHER_USER"}
-	setUpFiles(users, &contextFile{CurrentContext: "USER"}, users, )
+	setUpFiles(users, &contextFile{CurrentContext: "USER"}, users)
 	err := target.RenameUser("OTHER_USER", "NEW_NAME")
 	assert.NilError(t, err)
 	newUsers := []string{"default", "NEW_NAME"}

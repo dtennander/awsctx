@@ -1,6 +1,5 @@
 package strings
 
-
 func UnionOf(as []string, bs []string) []string {
 	unionMap := map[string]bool{}
 	for _, a := range as {
