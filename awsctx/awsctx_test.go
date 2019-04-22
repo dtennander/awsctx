@@ -2,6 +2,7 @@ package awsctx
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"gotest.tools/assert"
 	"os"
 	"strings"
@@ -14,12 +15,13 @@ var configFileContent []byte
 
 var target *Awsctx
 
-func setUpFiles(credentialUsers []string, contextUser string, configUsers []string) {
+func setUpFiles(credentialUsers []string, contextUser *contextFile, configUsers []string) {
+	ctxBytes, _ := yaml.Marshal(contextUser)
 	readFile = func(f string) (bs []byte, e error) {
 		if strings.Contains(f, "credentials") {
 			bs = []byte(createFile("", credentialUsers))
 		} else if strings.Contains(f, "awsctx") {
-			bs = []byte(fmt.Sprintf("currentContext: %s\n", contextUser))
+			bs = ctxBytes
 		} else if strings.Contains(f, "config") {
 			bs = []byte(createFile("profile ", configUsers))
 		}
@@ -54,23 +56,23 @@ func createFile(prefix string, users []string) string {
 
 func TestGetUsers(t *testing.T) {
 	usersOnFile := []string{"default", "OTHER_USER"}
-	setUpFiles(usersOnFile,"USER", usersOnFile)
+	setUpFiles(usersOnFile, &contextFile{CurrentContext: "USER"}, usersOnFile)
 	users, err := target.GetUsers()
 	assert.NilError(t, err)
 	assert.Equal(t, len(users), 2)
-	assert.Equal(t, users[0].Name, "USER")
-	assert.Equal(t, users[0].IsCurrent, true)
+	foundUser := users[0].Name == "USER" || users[1].Name == "USER"
+	assert.Assert(t, foundUser)
 }
 
 func TestGetUsersExtraInConfig(t *testing.T) {
-	setUpFiles([]string{"default", "A"},"USER", []string{"default", "A", "B"})
+	setUpFiles([]string{"default", "A"},&contextFile{CurrentContext: "USER"}, []string{"default", "A", "B"})
 	users, err := target.GetUsers()
 	assert.NilError(t, err)
 	assert.Equal(t, len(users), 3)
 }
 
 func TestGetUsersExtraInCredentials(t *testing.T) {
-	setUpFiles([]string{"default", "A", "B"},"USER", []string{"default", "A"})
+	setUpFiles([]string{"default", "A", "B"},&contextFile{CurrentContext: "USER"}, []string{"default", "A"})
 	users, err := target.GetUsers()
 	assert.NilError(t, err)
 	assert.Equal(t, len(users), 3)
@@ -78,18 +80,32 @@ func TestGetUsersExtraInCredentials(t *testing.T) {
 
 func TestSwitchUser(t *testing.T) {
 	users := []string{"default", "OTHER_USER"}
-	setUpFiles(users, "USER", users, )
+	setUpFiles(users, &contextFile{CurrentContext: "USER"}, users, )
 	err := target.SwitchUser("OTHER_USER")
 	assert.NilError(t, err)
 	newUsers := []string{"USER", "default"}
 	assert.Equal(t, string(credFileContent), createFile("", newUsers))
 	assert.Equal(t, string(configFileContent), createFile("profile ", newUsers))
-	assert.Equal(t, string(ctxFileContent), fmt.Sprintf("currentContext: %s\n", "OTHER_USER"))
+	newCtx := &contextFile{}
+	_ = yaml.Unmarshal(ctxFileContent, newCtx)
+	assert.Equal(t, newCtx.CurrentContext, "OTHER_USER")
+	assert.Equal(t, newCtx.LastContext, "USER")
+}
+
+func TestSwitchBack(t *testing.T) {
+	users := []string{"default", "OTHER_USER"}
+	setUpFiles(users, &contextFile{CurrentContext: "USER", LastContext:"OTHER_USER"}, users, )
+	err := target.SwitchBack()
+	assert.NilError(t, err)
+	newCtx := &contextFile{}
+	_ = yaml.Unmarshal(ctxFileContent, newCtx)
+	assert.Equal(t, newCtx.CurrentContext, "OTHER_USER")
+	assert.Equal(t, newCtx.LastContext, "USER")
 }
 
 func TestRenameCtx(t *testing.T) {
 	users := []string{"default", "OTHER_USER"}
-	setUpFiles(users, "USER", users, )
+	setUpFiles(users, &contextFile{CurrentContext: "USER"}, users, )
 	err := target.RenameUser("USER", "NEW_NAME")
 	assert.NilError(t, err)
 	assert.Equal(t, string(credFileContent), createFile("", users))
@@ -99,7 +115,7 @@ func TestRenameCtx(t *testing.T) {
 
 func TestRenameNotCtx(t *testing.T) {
 	users := []string{"default", "OTHER_USER"}
-	setUpFiles(users, "USER", users, )
+	setUpFiles(users, &contextFile{CurrentContext: "USER"}, users, )
 	err := target.RenameUser("OTHER_USER", "NEW_NAME")
 	assert.NilError(t, err)
 	newUsers := []string{"default", "NEW_NAME"}

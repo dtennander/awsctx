@@ -8,7 +8,7 @@ import (
 type contextFile struct {
 	CurrentContext string `yaml:"currentContext"`
 	LastContext string `yaml:"lastContext,omitempty"`
-	filePath string
+	filePath string `yaml:"omit"`
 }
 
 func (ctx *contextFile) store() error {

@@ -46,7 +46,7 @@ func main() {
 		{
 			Name:        "rename",
 			ArgsUsage:   "<old name> <new name>",
-			Description: "renames a user to a new namer",
+			Description: "renames user to a new name",
 			ShortName:   "r",
 			Action:      rename,
 		}, {
@@ -60,6 +60,10 @@ func main() {
 				},
 			},
 			Action: setup,
+		}, {
+			Name: "-",
+			Description: "Switch to the previous user",
+			Action: switchBack,
 		},
 	}
 	err := app.Run(os.Args)
@@ -97,6 +101,14 @@ func setup(_ *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 	return err
+}
+
+func switchBack(c *cli.Context) error {
+	aws, err := awsctx.New(awsFolder)
+	if err != nil {
+		return err
+	}
+	return aws.SwitchBack()
 }
 
 func mainAction(c *cli.Context) error {

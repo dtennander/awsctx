@@ -94,9 +94,14 @@ func (a *Awsctx) SwitchUser(user string) error {
 	if err := a.renameAll(user, "default"); err != nil {
 		return err
 	}
+	a.contextFile.LastContext = a.contextFile.CurrentContext
 	a.contextFile.CurrentContext = user
 	println("Switched to user \"" + user + "\".")
 	return a.storeAll()
+}
+
+func (a *Awsctx) SwitchBack() error {
+	return a.SwitchUser(a.contextFile.LastContext)
 }
 
 func SetUpDefaultContext(folder, defaultName string) error {
