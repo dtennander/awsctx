@@ -1,5 +1,7 @@
 package awsctx
 
+import "github.com/DiTo04/awsctx/awsctx/strings"
+
 type Awsctx struct {
 	credentialsFile *credentialsFile
 	configFile      *configFile
@@ -33,7 +35,7 @@ type Context struct {
 
 func (a *Awsctx) GetUsers() ([]Context, error) {
 	var result []Context
-	for _, user := range unionOf(a.credentialsFile.getAllUsers(), a.configFile.getAllUsers()) {
+	for _, user := range strings.UnionOf(a.credentialsFile.getAllUsers(), a.configFile.getAllUsers()) {
 		if user == "default" && a.contextFile.CurrentContext != "" {
 			result = append(result, Context{Name: a.contextFile.CurrentContext, IsCurrent: true})
 		} else {
@@ -41,21 +43,6 @@ func (a *Awsctx) GetUsers() ([]Context, error) {
 		}
 	}
 	return result, nil
-}
-
-func unionOf(as []string, bs []string) []string {
-	unionMap := map[string]bool{}
-	for _, a := range as {
-		unionMap[a] = true
-	}
-	for _,b := range bs {
-		unionMap[b] = true
-	}
-	var union []string
-	for k, _ := range unionMap {
-		union = append(union, k)
-	}
-	return union
 }
 
 func (a *Awsctx) RenameUser(oldUser, newUser string) error {
