@@ -49,7 +49,7 @@ func (a *Awsctx) RenameUser(oldUser, newUser string) error {
 	switch {
 	case oldUser == a.contextFile.CurrentContext:
 		a.contextFile.CurrentContext = newUser
-	case a.credentialsFile.userExists(oldUser):
+	case a.userExists(oldUser):
 		if err := a.renameAll(oldUser, newUser); err != nil {
 			return err
 		}
@@ -59,6 +59,11 @@ func (a *Awsctx) RenameUser(oldUser, newUser string) error {
 	}
 	println("Renamed user \"" + oldUser + "\" to \"" + newUser + "\".")
 	return a.storeAll()
+}
+
+func (a *Awsctx) userExists(user string) bool {
+	users := strings.UnionOf(a.configFile.getAllUsers(), a.credentialsFile.getAllUsers())
+	return strings.Contains(users, user)
 }
 
 func (a *Awsctx) renameAll(oldName, newName string) error {
@@ -79,7 +84,7 @@ func (a *Awsctx) storeAll() error {
 }
 
 func (a *Awsctx) SwitchUser(user string) error {
-	if !a.credentialsFile.userExists(user) && user != a.contextFile.CurrentContext {
+	if !a.userExists(user) && user != a.contextFile.CurrentContext {
 		println("No user with the Name: \"" + user + "\".")
 		return nil
 	}
