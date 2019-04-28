@@ -33,44 +33,44 @@ type Context struct {
 	IsCurrent bool
 }
 
-func (a *Awsctx) GetUsers() ([]Context, error) {
+func (a *Awsctx) GetProfiles() ([]Context, error) {
 	var result []Context
-	for _, user := range strings.UnionOf(a.credentialsFile.getAllUsers(), a.configFile.getAllUsers()) {
-		if user == "default" && a.contextFile.CurrentContext != "" {
-			result = append(result, Context{Name: a.contextFile.CurrentContext, IsCurrent: true})
+	for _, profile := range strings.UnionOf(a.credentialsFile.getAllProfiles(), a.configFile.getAllProfiles()) {
+		if profile == "default" && a.contextFile.CurrentProfile != "" {
+			result = append(result, Context{Name: a.contextFile.CurrentProfile, IsCurrent: true})
 		} else {
-			result = append(result, Context{Name: user, IsCurrent: false})
+			result = append(result, Context{Name: profile, IsCurrent: false})
 		}
 	}
 	return result, nil
 }
 
-func (a *Awsctx) RenameUser(oldUser, newUser string) error {
+func (a *Awsctx) RenameProfile(oldName, newName string) error {
 	switch {
-	case oldUser == a.contextFile.CurrentContext:
-		a.contextFile.CurrentContext = newUser
-	case a.userExists(oldUser):
-		if err := a.renameAll(oldUser, newUser); err != nil {
+	case oldName == a.contextFile.CurrentProfile:
+		a.contextFile.CurrentProfile = newName
+	case a.profileExists(oldName):
+		if err := a.renameAll(oldName, newName); err != nil {
 			return err
 		}
 	default:
-		println("No user with the Name: \"" + oldUser + "\".")
+		println("No profile with the Name: \"" + oldName + "\".")
 		return nil
 	}
-	println("Renamed user \"" + oldUser + "\" to \"" + newUser + "\".")
+	println("Renamed profile \"" + oldName + "\" to \"" + newName + "\".")
 	return a.storeAll()
 }
 
-func (a *Awsctx) userExists(user string) bool {
-	users := strings.UnionOf(a.configFile.getAllUsers(), a.credentialsFile.getAllUsers())
-	return strings.Contains(users, user)
+func (a *Awsctx) profileExists(profile string) bool {
+	profiles := strings.UnionOf(a.configFile.getAllProfiles(), a.credentialsFile.getAllProfiles())
+	return strings.Contains(profiles, profile)
 }
 
 func (a *Awsctx) renameAll(oldName, newName string) error {
-	if err := a.credentialsFile.renameUser(oldName, newName); err != nil {
+	if err := a.credentialsFile.renameProfile(oldName, newName); err != nil {
 		return err
 	}
-	return a.configFile.renameUser(oldName, newName)
+	return a.configFile.renameProfile(oldName, newName)
 }
 
 func (a *Awsctx) storeAll() error {
@@ -83,25 +83,25 @@ func (a *Awsctx) storeAll() error {
 	return a.configFile.store()
 }
 
-func (a *Awsctx) SwitchUser(user string) error {
-	if !a.userExists(user) && user != a.contextFile.CurrentContext {
-		println("No user with the Name: \"" + user + "\".")
+func (a *Awsctx) SwitchProfile(profile string) error {
+	if !a.profileExists(profile) && profile != a.contextFile.CurrentProfile {
+		println("No profile with the Name: \"" + profile + "\".")
 		return nil
 	}
-	if err := a.renameAll("default", a.contextFile.CurrentContext); err != nil {
+	if err := a.renameAll("default", a.contextFile.CurrentProfile); err != nil {
 		return err
 	}
-	if err := a.renameAll(user, "default"); err != nil {
+	if err := a.renameAll(profile, "default"); err != nil {
 		return err
 	}
-	a.contextFile.LastContext = a.contextFile.CurrentContext
-	a.contextFile.CurrentContext = user
-	println("Switched to user \"" + user + "\".")
+	a.contextFile.LastProfile = a.contextFile.CurrentProfile
+	a.contextFile.CurrentProfile = profile
+	println("Switched to profile \"" + profile + "\".")
 	return a.storeAll()
 }
 
 func (a *Awsctx) SwitchBack() error {
-	return a.SwitchUser(a.contextFile.LastContext)
+	return a.SwitchProfile(a.contextFile.LastProfile)
 }
 
 func SetUpDefaultContext(folder, defaultName string) error {

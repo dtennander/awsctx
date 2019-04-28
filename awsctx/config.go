@@ -13,13 +13,13 @@ func newConfigFile(folder string) (*configFile, error) {
 
 var defaultRegEx = regexp.MustCompile(`\[default]`)
 
-func (c *configFile) renameUser(oldName, newName string) error {
-	var userReg *regexp.Regexp
+func (c *configFile) renameProfile(oldName, newName string) error {
+	var profileReg *regexp.Regexp
 	if oldName == "default" {
-		userReg = defaultRegEx
+		profileReg = defaultRegEx
 	} else {
-		var err error // needed to not override userReg.
-		userReg, err = regexp.Compile(`\[profile ` + oldName + `]`)
+		var err error // needed to not override profileReg.
+		profileReg, err = regexp.Compile(`\[profile ` + oldName + `]`)
 		if err != nil {
 			return err
 		}
@@ -30,17 +30,17 @@ func (c *configFile) renameUser(oldName, newName string) error {
 	} else {
 		newTag = "[profile " + newName + "]"
 	}
-	c.data = userReg.ReplaceAll(c.data, []byte(newTag))
+	c.data = profileReg.ReplaceAll(c.data, []byte(newTag))
 	return nil
 }
 
-var usersRegex = regexp.MustCompile(`\[profile (\S+)]`)
+var profilesRegex = regexp.MustCompile(`\[profile (\S+)]`)
 
-func (c *configFile) getAllUsers() []string {
-	users := usersRegex.FindAllSubmatch(c.data, -1)
+func (c *configFile) getAllProfiles() []string {
+	profiles := profilesRegex.FindAllSubmatch(c.data, -1)
 	var result []string
-	for i := range users {
-		result = append(result, string(users[i][1]))
+	for i := range profiles {
+		result = append(result, string(profiles[i][1]))
 	}
 	return result
 }

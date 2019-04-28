@@ -6,8 +6,8 @@ import (
 )
 
 type contextFile struct {
-	CurrentContext string `yaml:"currentContext"`
-	LastContext    string `yaml:"lastContext,omitempty"`
+	CurrentProfile string `yaml:"currentProfile"`
+	LastProfile    string `yaml:"lastProfile,omitempty"`
 	filePath       string
 }
 
@@ -43,7 +43,7 @@ func newContextFile(folder string) (*contextFile, error) {
 }
 
 func createNewContextFile(folder, name string) error {
-	newCtx := contextFile{CurrentContext: name}
+	newCtx := contextFile{CurrentProfile: name}
 	out, err := yaml.Marshal(newCtx)
 	if err != nil {
 		return err

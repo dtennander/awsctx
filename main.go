@@ -23,9 +23,7 @@ func main() {
 	app.HideVersion = true
 
 	app.HelpName = "awsctx"
-	app.ArgsUsage = "[user]"
-	app.Usage = "A tool to switch aws user"
-	app.UsageText = "awsctx [ <user> | rename <old user> <new user> ]"
+	app.Usage = "A tool to switch aws profiles"
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
@@ -46,26 +44,26 @@ func main() {
 		{
 			Name:        "rename",
 			ArgsUsage:   "<old name> <new name>",
-			Description: "Renames user to a new name.",
-			Usage: "renames user to a new name",
+			Description: "Rename a profile to a new name.",
+			Usage:       "renames a profile to a new name",
 			ShortName:   "r",
 			Action:      rename,
 		}, {
 			Name:        "setup",
 			Description: "set up awsctx.",
-			Usage: "set up awsctx",
+			Usage:       "set up awsctx",
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:        "name, n",
-					Usage:       "set context name for default user",
+					Usage:       "set profile name for default profile",
 					Destination: &nameFlag,
 				},
 			},
 			Action: setup,
 		}, {
 			Name:        "-",
-			Description: "Switch to the previous user",
-			Usage: "Switch to the previous user",
+			Description: "Switch to the previous profile",
+			Usage:       "switch to the previous profile",
 			Action:      switchBack,
 		},
 	}
@@ -83,7 +81,7 @@ func rename(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	return aws.RenameUser(c.Args()[0], c.Args()[1])
+	return aws.RenameProfile(c.Args()[0], c.Args()[1])
 }
 
 func setup(_ *cli.Context) error {
@@ -121,9 +119,9 @@ func mainAction(c *cli.Context) error {
 	}
 	switch c.NArg() {
 	case 0:
-		return printAllUsers(aws)
+		return printAllProfiles(aws)
 	case 1:
-		return aws.SwitchUser(c.Args()[0])
+		return aws.SwitchProfile(c.Args()[0])
 	default:
 		return cli.NewExitError("expected one or zero arguments", 1)
 	}
@@ -141,24 +139,24 @@ func initAwsctx() (*awsctx.Awsctx, error) {
 	return ctx, err
 }
 
-func printAllUsers(aws *awsctx.Awsctx) error {
-	users, err := aws.GetUsers()
+func printAllProfiles(aws *awsctx.Awsctx) error {
+	profiles, err := aws.GetProfiles()
 	if err != nil {
 		return err
 	}
-	for _, user := range users {
+	for _, profile := range profiles {
 		var prefix string
 		switch {
-		case noColorFlag && user.IsCurrent:
+		case noColorFlag && profile.IsCurrent:
 			prefix = "*"
-		case !noColorFlag && user.IsCurrent:
+		case !noColorFlag && profile.IsCurrent:
 			prefix = currentContextColor
-		case noColorFlag && !user.IsCurrent:
+		case noColorFlag && !profile.IsCurrent:
 			prefix = " "
-		case !noColorFlag && !user.IsCurrent:
+		case !noColorFlag && !profile.IsCurrent:
 			prefix = normalColor
 		}
-		println(prefix + user.Name)
+		println(prefix + profile.Name)
 	}
 	return nil
 }

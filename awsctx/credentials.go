@@ -13,20 +13,20 @@ func newCredentialsFile(folder string) (*credentialsFile, error) {
 
 var nameRegEx = regexp.MustCompile(`\[(.+)]`)
 
-func (c *credentialsFile) getAllUsers() []string {
-	users := nameRegEx.FindAllSubmatch(c.data, -1)
+func (c *credentialsFile) getAllProfiles() []string {
+	profiles := nameRegEx.FindAllSubmatch(c.data, -1)
 	var result []string
-	for i := range users {
-		result = append(result, string(users[i][1]))
+	for i := range profiles {
+		result = append(result, string(profiles[i][1]))
 	}
 	return result
 }
 
-func (c *credentialsFile) renameUser(oldName, newName string) error {
-	userReg, err := regexp.Compile(`\[` + oldName + `]`)
+func (c *credentialsFile) renameProfile(oldName, newName string) error {
+	profileReg, err := regexp.Compile(`\[` + oldName + `]`)
 	if err != nil {
 		return err
 	}
-	c.data = userReg.ReplaceAll(c.data, []byte("["+newName+"]"))
+	c.data = profileReg.ReplaceAll(c.data, []byte("["+newName+"]"))
 	return nil
 }

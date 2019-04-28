@@ -15,15 +15,15 @@ var configFileContent []byte
 
 var target *Awsctx
 
-func setUpFiles(credentialUsers []string, contextUser *contextFile, configUsers []string) {
-	ctxBytes, _ := yaml.Marshal(contextUser)
+func setUpFiles(credentialProfiles []string, contextProfile *contextFile, configProfiles []string) {
+	ctxBytes, _ := yaml.Marshal(contextProfile)
 	readFile = func(f string) (bs []byte, e error) {
 		if strings.Contains(f, "credentials") {
-			bs = []byte(createFile("", credentialUsers))
+			bs = []byte(createFile("", credentialProfiles))
 		} else if strings.Contains(f, "awsctx") {
 			bs = ctxBytes
 		} else if strings.Contains(f, "config") {
-			bs = []byte(createFile("profile ", configUsers))
+			bs = []byte(createFile("profile ", configProfiles))
 		}
 		return
 	}
@@ -42,83 +42,83 @@ func setUpFiles(credentialUsers []string, contextUser *contextFile, configUsers 
 	target, _ = New("aFolder")
 }
 
-func createFile(prefix string, users []string) string {
+func createFile(prefix string, profiles []string) string {
 	var file strings.Builder
-	for _, user := range users {
-		if user == "default" {
+	for _, profile := range profiles {
+		if profile == "default" {
 			file.WriteString("[default]\n")
 		} else {
-			file.WriteString(fmt.Sprintf("[%s%s]\n", prefix, user))
+			file.WriteString(fmt.Sprintf("[%s%s]\n", prefix, profile))
 		}
 	}
 	return file.String()
 }
 
-func TestGetUsers(t *testing.T) {
-	usersOnFile := []string{"default", "OTHER_USER"}
-	setUpFiles(usersOnFile, &contextFile{CurrentContext: "USER"}, usersOnFile)
-	users, err := target.GetUsers()
+func TestGetProfiles(t *testing.T) {
+	profilesOnFile := []string{"default", "OTHER_PROFILE"}
+	setUpFiles(profilesOnFile, &contextFile{CurrentProfile: "PROFILE"}, profilesOnFile)
+	profiles, err := target.GetProfiles()
 	assert.NilError(t, err)
-	assert.Equal(t, len(users), 2)
-	foundUser := users[0].Name == "USER" || users[1].Name == "USER"
-	assert.Assert(t, foundUser)
+	assert.Equal(t, len(profiles), 2)
+	foundProfile := profiles[0].Name == "PROFILE" || profiles[1].Name == "PROFILE"
+	assert.Assert(t, foundProfile)
 }
 
-func TestGetUsersExtraInConfig(t *testing.T) {
-	setUpFiles([]string{"default", "A"}, &contextFile{CurrentContext: "USER"}, []string{"default", "A", "B"})
-	users, err := target.GetUsers()
+func TestGetProfilesExtraInConfig(t *testing.T) {
+	setUpFiles([]string{"default", "A"}, &contextFile{CurrentProfile: "PROFILE"}, []string{"default", "A", "B"})
+	profiles, err := target.GetProfiles()
 	assert.NilError(t, err)
-	assert.Equal(t, len(users), 3)
+	assert.Equal(t, len(profiles), 3)
 }
 
-func TestGetUsersExtraInCredentials(t *testing.T) {
-	setUpFiles([]string{"default", "A", "B"}, &contextFile{CurrentContext: "USER"}, []string{"default", "A"})
-	users, err := target.GetUsers()
+func TestGetProfilesExtraInCredentials(t *testing.T) {
+	setUpFiles([]string{"default", "A", "B"}, &contextFile{CurrentProfile: "PROFILE"}, []string{"default", "A"})
+	profiles, err := target.GetProfiles()
 	assert.NilError(t, err)
-	assert.Equal(t, len(users), 3)
+	assert.Equal(t, len(profiles), 3)
 }
 
-func TestSwitchUser(t *testing.T) {
-	users := []string{"default", "OTHER_USER"}
-	setUpFiles(users, &contextFile{CurrentContext: "USER"}, users)
-	err := target.SwitchUser("OTHER_USER")
+func TestSwitchProfile(t *testing.T) {
+	profiles := []string{"default", "OTHER_PROFILE"}
+	setUpFiles(profiles, &contextFile{CurrentProfile: "PROFILE"}, profiles)
+	err := target.SwitchProfile("OTHER_PROFILE")
 	assert.NilError(t, err)
-	newUsers := []string{"USER", "default"}
-	assert.Equal(t, string(credFileContent), createFile("", newUsers))
-	assert.Equal(t, string(configFileContent), createFile("profile ", newUsers))
+	newProfiles := []string{"PROFILE", "default"}
+	assert.Equal(t, string(credFileContent), createFile("", newProfiles))
+	assert.Equal(t, string(configFileContent), createFile("profile ", newProfiles))
 	newCtx := &contextFile{}
 	_ = yaml.Unmarshal(ctxFileContent, newCtx)
-	assert.Equal(t, newCtx.CurrentContext, "OTHER_USER")
-	assert.Equal(t, newCtx.LastContext, "USER")
+	assert.Equal(t, newCtx.CurrentProfile, "OTHER_PROFILE")
+	assert.Equal(t, newCtx.LastProfile, "PROFILE")
 }
 
 func TestSwitchBack(t *testing.T) {
-	users := []string{"default", "OTHER_USER"}
-	setUpFiles(users, &contextFile{CurrentContext: "USER", LastContext: "OTHER_USER"}, users)
+	profiles := []string{"default", "OTHER_PROFILE"}
+	setUpFiles(profiles, &contextFile{CurrentProfile: "PROFILE", LastProfile: "OTHER_PROFILE"}, profiles)
 	err := target.SwitchBack()
 	assert.NilError(t, err)
 	newCtx := &contextFile{}
 	_ = yaml.Unmarshal(ctxFileContent, newCtx)
-	assert.Equal(t, newCtx.CurrentContext, "OTHER_USER")
-	assert.Equal(t, newCtx.LastContext, "USER")
+	assert.Equal(t, newCtx.CurrentProfile, "OTHER_PROFILE")
+	assert.Equal(t, newCtx.LastProfile, "PROFILE")
 }
 
 func TestRenameCtx(t *testing.T) {
-	users := []string{"default", "OTHER_USER"}
-	setUpFiles(users, &contextFile{CurrentContext: "USER"}, users)
-	err := target.RenameUser("USER", "NEW_NAME")
+	profiles := []string{"default", "OTHER_PROFILE"}
+	setUpFiles(profiles, &contextFile{CurrentProfile: "PROFILE"}, profiles)
+	err := target.RenameProfile("PROFILE", "NEW_NAME")
 	assert.NilError(t, err)
-	assert.Equal(t, string(credFileContent), createFile("", users))
-	assert.Equal(t, string(configFileContent), createFile("profile ", users))
+	assert.Equal(t, string(credFileContent), createFile("", profiles))
+	assert.Equal(t, string(configFileContent), createFile("profile ", profiles))
 	assert.Equal(t, string(ctxFileContent), fmt.Sprintf("currentContext: %s\n", "NEW_NAME"))
 }
 
 func TestRenameNotCtx(t *testing.T) {
-	users := []string{"default", "OTHER_USER"}
-	setUpFiles(users, &contextFile{CurrentContext: "USER"}, users)
-	err := target.RenameUser("OTHER_USER", "NEW_NAME")
+	profiles := []string{"default", "OTHER_PROFILE"}
+	setUpFiles(profiles, &contextFile{CurrentProfile: "PROFILE"}, profiles)
+	err := target.RenameProfile("OTHER_PROFILE", "NEW_NAME")
 	assert.NilError(t, err)
-	newUsers := []string{"default", "NEW_NAME"}
-	assert.Equal(t, string(credFileContent), createFile("", newUsers))
-	assert.Equal(t, string(configFileContent), createFile("profile ", newUsers))
+	newProfiles := []string{"default", "NEW_NAME"}
+	assert.Equal(t, string(credFileContent), createFile("", newProfiles))
+	assert.Equal(t, string(configFileContent), createFile("profile ", newProfiles))
 }

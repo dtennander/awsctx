@@ -1,6 +1,6 @@
 awsctx
 ======
-A cli tool for handling switching between AWS users.
+A cli tool for handling switching between AWS profiles.
 
 ![info-video](docs/awsctx.gif)
 
