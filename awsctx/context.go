@@ -8,7 +8,7 @@ import (
 type contextFile struct {
 	CurrentProfile string `yaml:"currentProfile"`
 	LastProfile    string `yaml:"lastProfile,omitempty"`
-	filePath       string
+	filePath       string `yaml:"-"`
 }
 
 func (ctx *contextFile) store() error {
@@ -37,6 +37,9 @@ func newContextFile(folder string) (*contextFile, error) {
 	ctx := &contextFile{}
 	if err := yaml.Unmarshal(file, ctx); err != nil {
 		return nil, err
+	}
+	if ctx.CurrentProfile == "" {
+		return nil, NoContextError("CurrentProfile not set")
 	}
 	ctx.filePath = filePath
 	return ctx, nil
