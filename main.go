@@ -46,12 +46,14 @@ func main() {
 		{
 			Name:        "rename",
 			ArgsUsage:   "<old name> <new name>",
-			Description: "renames user to a new name",
+			Description: "Renames user to a new name.",
+			Usage: "renames user to a new name",
 			ShortName:   "r",
 			Action:      rename,
 		}, {
 			Name:        "setup",
 			Description: "set up awsctx.",
+			Usage: "set up awsctx",
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:        "name, n",
@@ -63,6 +65,7 @@ func main() {
 		}, {
 			Name:        "-",
 			Description: "Switch to the previous user",
+			Usage: "Switch to the previous user",
 			Action:      switchBack,
 		},
 	}
