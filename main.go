@@ -76,7 +76,7 @@ func rename(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cli.NewExitError("Expected old name and new name.", 1)
 	}
-	aws, err := awsctx.New(awsFolder)
+	aws, err := initAwsctx()
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func setup(_ *cli.Context) error {
 }
 
 func switchBack(c *cli.Context) error {
-	aws, err := awsctx.New(awsFolder)
+	aws, err := initAwsctx()
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func switchBack(c *cli.Context) error {
 }
 
 func mainAction(c *cli.Context) error {
-	aws, err := awsctx.New(awsFolder)
+	aws, err := initAwsctx()
 	if err != nil {
 		return err
 	}
@@ -126,14 +126,22 @@ func mainAction(c *cli.Context) error {
 	}
 }
 
-func printAllUsers(aws *awsctx.Awsctx) error {
-	users, err := aws.GetUsers()
+func initAwsctx() (*awsctx.Awsctx, error) {
+	ctx, err := awsctx.New(awsFolder)
 	if err != nil {
 		_, ok := err.(awsctx.NoContextError)
 		if !ok {
-			return err
+			return nil, err
 		}
-		return cli.NewExitError("awsctx is not initialised. Please run `awsctx setup`.", 1)
+		return nil, cli.NewExitError("awsctx is not initialised. Please run: awsctx setup", 1)
+	}
+	return ctx, err
+}
+
+func printAllUsers(aws *awsctx.Awsctx) error {
+	users, err := aws.GetUsers()
+	if err != nil {
+		return err
 	}
 	for _, user := range users {
 		var prefix string
