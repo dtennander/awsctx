@@ -65,6 +65,10 @@ func main() {
 			Description: "Switch to the previous profile",
 			Usage:       "switch to the previous profile",
 			Action:      switchBack,
+		}, {
+			Name: "<profile>",
+			Usage: "switch to given profile",
+			Action: nil,
 		},
 	}
 	err := app.Run(os.Args)
