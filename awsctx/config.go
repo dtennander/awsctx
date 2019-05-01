@@ -34,7 +34,7 @@ func (c *configFile) renameProfile(oldName, newName string) error {
 	return nil
 }
 
-var profilesRegex = regexp.MustCompile(`\[profile (\S+)]`)
+var profilesRegex = regexp.MustCompile(`(?:^|\n)\[(?:profile )?(\S+)]`)
 
 func (c *configFile) getAllProfiles() []string {
 	profiles := profilesRegex.FindAllSubmatch(c.data, -1)

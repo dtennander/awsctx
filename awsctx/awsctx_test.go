@@ -122,3 +122,13 @@ func TestRenameNotCtx(t *testing.T) {
 	assert.Equal(t, string(credFileContent), createFile("", newProfiles))
 	assert.Equal(t, string(configFileContent), createFile("profile ", newProfiles))
 }
+
+func TestDefaultOnlyInConfig(t *testing.T) {
+	setUpFiles(
+		[]string{"OTHER_PROFILE"},
+		&contextFile{CurrentProfile: "PROFILE"},
+		[]string{"default", "OTHER_PROFILE"})
+	profiles, err := target.GetProfiles()
+	assert.NilError(t, err)
+	assert.Equal(t, len(profiles), 2)
+}
