@@ -11,27 +11,38 @@ func newConfigFile(folder string) (*configFile, error) {
 	return &configFile{openFile: *file}, e
 }
 
+func (c *configFile) renameProfile(oldName, newName string) error {
+	profileReg, err := getProfileRegex(oldName)
+	if err != nil {
+		return err
+	}
+	c.data = profileReg.ReplaceAll(c.data, getProfileTag(newName))
+
+	sourceProfileRegEx, err := regexp.Compile(`source_profile *= *` + oldName)
+
+	if err != nil {
+		return err
+	}
+	c.data = sourceProfileRegEx.ReplaceAll(c.data, []byte("source_profile = " + newName))
+	return nil
+}
+
 var defaultRegEx = regexp.MustCompile(`\[default]`)
 
-func (c *configFile) renameProfile(oldName, newName string) error {
-	var profileReg *regexp.Regexp
-	if oldName == "default" {
-		profileReg = defaultRegEx
+func getProfileRegex(name string) (*regexp.Regexp, error) {
+	if name == "default" {
+		return defaultRegEx, nil
 	} else {
-		var err error // needed to not override profileReg.
-		profileReg, err = regexp.Compile(`\[profile ` + oldName + `]`)
-		if err != nil {
-			return err
-		}
+		return regexp.Compile(`\[profile ` + name + `]`)
 	}
-	var newTag string
-	if newName == "default" {
-		newTag = "[default]"
+}
+
+func getProfileTag(name string) []byte {
+	if name == "default" {
+		return []byte("[default]")
 	} else {
-		newTag = "[profile " + newName + "]"
+		return []byte("[profile " + name + "]")
 	}
-	c.data = profileReg.ReplaceAll(c.data, []byte(newTag))
-	return nil
 }
 
 var profilesRegex = regexp.MustCompile(`(?:^|\n)\[(?:profile )?(\S+)]`)
