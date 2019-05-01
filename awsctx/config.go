@@ -23,7 +23,7 @@ func (c *configFile) renameProfile(oldName, newName string) error {
 	if err != nil {
 		return err
 	}
-	c.data = sourceProfileRegEx.ReplaceAll(c.data, []byte("source_profile = " + newName))
+	c.data = sourceProfileRegEx.ReplaceAll(c.data, []byte("source_profile = "+newName))
 	return nil
 }
 

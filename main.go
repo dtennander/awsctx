@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"github.com/DiTo04/awsctx/awsctx"
 	"github.com/urfave/cli"
 	"log"
@@ -20,7 +21,7 @@ var noColorFlag = false
 func main() {
 	app := cli.NewApp()
 	app.Name = "awsctx"
-	app.Version = "0.1"
+	app.Version = "1.2"
 	app.HideVersion = true
 
 	app.HelpName = "awsctx"
@@ -67,9 +68,13 @@ func main() {
 			Usage:       "switch to the previous profile",
 			Action:      switchBack,
 		}, {
-			Name: "<profile>",
-			Usage: "switch to given profile",
+			Name:   "<profile>",
+			Usage:  "switch to given profile",
 			Action: nil,
+		}, {
+			Name:   "version",
+			Usage:  "prints the current version",
+			Action: printVersion,
 		},
 	}
 	err := app.Run(os.Args)
@@ -149,7 +154,7 @@ func printAllProfiles(aws *awsctx.Awsctx) error {
 	if err != nil {
 		return err
 	}
-	sort.Slice(profiles, func(i, j int) bool {return profiles[i].Name < profiles[j].Name})
+	sort.Slice(profiles, func(i, j int) bool { return profiles[i].Name < profiles[j].Name })
 	for _, profile := range profiles {
 		var prefix string
 		switch {
@@ -164,5 +169,10 @@ func printAllProfiles(aws *awsctx.Awsctx) error {
 		}
 		println(prefix + profile.Name)
 	}
+	return nil
+}
+
+func printVersion(c *cli.Context) error {
+	fmt.Printf("Version %s", c.App.Version)
 	return nil
 }
