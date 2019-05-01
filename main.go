@@ -6,6 +6,7 @@ import (
 	"github.com/urfave/cli"
 	"log"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -148,6 +149,7 @@ func printAllProfiles(aws *awsctx.Awsctx) error {
 	if err != nil {
 		return err
 	}
+	sort.Slice(profiles, func(i, j int) bool {return profiles[i].Name < profiles[j].Name})
 	for _, profile := range profiles {
 		var prefix string
 		switch {
