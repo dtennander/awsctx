@@ -110,7 +110,7 @@ func TestRenameCtx(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, string(credFileContent), createFile("", profiles))
 	assert.Equal(t, string(configFileContent), createFile("profile ", profiles))
-	assert.Equal(t, string(ctxFileContent), fmt.Sprintf("currentContext: %s\n", "NEW_NAME"))
+	assert.Equal(t, string(ctxFileContent), fmt.Sprintf("currentProfile: %s\n", "NEW_NAME"))
 }
 
 func TestRenameNotCtx(t *testing.T) {
