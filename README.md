@@ -8,7 +8,7 @@ Install
 -------
 To install `awsctx` just run:
 ```bash
-go get -u github.com/DiTo04/awsctx
+go get -u github.com/dtennander/awsctx
 ```
 
 ----
