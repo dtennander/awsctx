@@ -51,18 +51,6 @@ func main() {
 			ShortName:   "r",
 			Action:      rename,
 		}, {
-			Name:        "setup",
-			Description: "set up awsctx.",
-			Usage:       "set up awsctx",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:        "name, n",
-					Usage:       "set profile name for default profile",
-					Destination: &nameFlag,
-				},
-			},
-			Action: setup,
-		}, {
 			Name:        "-",
 			Description: "Switch to the previous profile",
 			Usage:       "switch to the previous profile",
@@ -94,20 +82,15 @@ func rename(c *cli.Context) error {
 	return aws.RenameProfile(c.Args()[0], c.Args()[1])
 }
 
-func setup(_ *cli.Context) error {
-	var name string
-	if nameFlag != "" {
-		name = nameFlag
-	} else {
-		scanner := bufio.NewReader(os.Stdin)
-		print("Name of current context: ")
-		input, err := scanner.ReadString('\n')
-		if err != nil {
-			return err
-		}
-		name = strings.TrimRight(input, "\n")
+func setup() error {
+	scanner := bufio.NewReader(os.Stdin)
+	print("Please name your current default profile: ")
+	input, err := scanner.ReadString('\n')
+	if err != nil {
+		return err
 	}
-	err := awsctx.SetUpDefaultContext(awsFolder, name)
+	name := strings.TrimRight(input, "\n")
+	err = awsctx.SetUpDefaultContext(awsFolder, name)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
@@ -144,7 +127,11 @@ func initAwsctx() (*awsctx.Awsctx, error) {
 		if !ok {
 			return nil, err
 		}
-		return nil, cli.NewExitError("awsctx is not initialised. Please run: awsctx setup", 1)
+		err := setup()
+		if err != nil {
+			return nil, err
+		}
+		return initAwsctx()
 	}
 	return ctx, err
 }
