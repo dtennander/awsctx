@@ -1,4 +1,4 @@
-module github.com/DiTo04/awsctx
+module github.com/dtennander/awsctx
 
 go 1.11
 

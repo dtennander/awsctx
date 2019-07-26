@@ -1,6 +1,6 @@
 package awsctx
 
-import "github.com/DiTo04/awsctx/awsctx/strings"
+import "github.com/dtennander/awsctx/awsctx/strings"
 
 type Awsctx struct {
 	credentialsFile *credentialsFile

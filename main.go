@@ -3,7 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/DiTo04/awsctx/awsctx"
+	"github.com/dtennander/awsctx/awsctx"
 	"github.com/urfave/cli"
 	"log"
 	"os"
