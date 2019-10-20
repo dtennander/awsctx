@@ -177,7 +177,7 @@ func printProfile(c *cli.Context) error  {
 	if err != nil {
 		return err
 	}
-	println(profile)
+	fmt.Println(profile)
 	return nil
 }
 
