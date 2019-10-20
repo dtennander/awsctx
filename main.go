@@ -63,6 +63,10 @@ func main() {
 			Name:   "version",
 			Usage:  "prints the current version",
 			Action: printVersion,
+		}, {
+			Name: "current",
+			Usage: "prints the current profile",
+			Action: printProfile,
 		},
 	}
 	err := app.Run(os.Args)
@@ -162,4 +166,30 @@ func printAllProfiles(aws *awsctx.Awsctx) error {
 func printVersion(c *cli.Context) error {
 	fmt.Printf("Version %s", c.App.Version)
 	return nil
+}
+
+func printProfile(c *cli.Context) error  {
+	aws, err := initAwsctx()
+	if err != nil {
+		return err
+	}
+	profile, err := getCurrentProfile(aws)
+	if err != nil {
+		return err
+	}
+	println(profile)
+	return nil
+}
+
+func getCurrentProfile(aws *awsctx.Awsctx) (string, error) {
+	profiles, err := aws.GetProfiles()
+	if err != nil {
+		return "", err
+	}
+	for _, p := range profiles {
+		if p.IsCurrent {
+			return p.Name, nil
+		}
+	}
+	return "", fmt.Errorf("could not find current profile")
 }
